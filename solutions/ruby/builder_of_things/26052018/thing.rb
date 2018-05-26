@@ -9,7 +9,7 @@ class ArrayOfThings < Array
   def each(&block)
     if block_given?
       @elements.each do |element|
-        element.instance_eval &block
+        element.instance_eval(&block)
       end
 
       @elements
@@ -49,39 +49,45 @@ class Thing
     @values = {}
   end
 
-  def method_missing(name, *args)
-    case name
-    when :is_a
-      Thing.new(context: true, parent: self)
-    when :is_not_a
-      Thing.new(context: false, parent: self)
-    when :has, :having
-      number = args.first
-      if number == 1
-        thing = Thing.new
-        Thing.new(context: thing, parent: self)
-      else
-        things = ArrayOfThings.new(number.times.map { Thing.new() })
-        Thing.new(context: things, parent: self)
-      end
-    when :is_the
-      Spy.new(
-        calls_expected: 2,
-        callback: ->(args) { @values[args.first.to_s] = args.last.to_s }
-      )
-    else
-      if name.to_s.end_with?('?')
-        get_value(name)
-      else
-        if parent
-          Array(context).
-            select { |t| t.is_a?(Thing) }.
-            each { |t| t.name = name }
+  def is_a
+    Thing.new(context: true, parent: self)
+  end
 
-          parent.set_value(name, context)
-        else
-          get_value(name)
-        end
+  def is_not_a
+    Thing.new(context: false, parent: self)
+  end
+
+  def has(count)
+    if count == 1
+      thing = Thing.new
+      Thing.new(context: thing, parent: self)
+    else
+      things = ArrayOfThings.new(count.times.map { Thing.new() })
+      Thing.new(context: things, parent: self)
+    end
+  end
+
+  alias_method :having, :has
+
+  def is_the
+    Spy.new(
+      calls_expected: 2,
+      callback: ->(args) { @values[args.first.to_s] = args.last.to_s }
+    )
+  end
+
+  def method_missing(name, *args)
+    if name.to_s.end_with?('?')
+      get_value(name)
+    else
+      if parent
+        Array(context).
+          select { |t| t.is_a?(Thing) }.
+          each { |t| t.name = name }
+
+        parent.set_value(name, context)
+      else
+        get_value(name)
       end
     end
   end
