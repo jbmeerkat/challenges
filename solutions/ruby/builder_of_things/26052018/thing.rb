@@ -1,3 +1,7 @@
+# frozen_string_literal: true
+
+require 'active_support/core_ext/string'
+
 class Thing
   attr_reader :name, :context, :parent
   def initialize(name, context = nil, parent = nil)
