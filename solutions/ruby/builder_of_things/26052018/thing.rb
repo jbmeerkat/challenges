@@ -70,10 +70,42 @@ class Thing
   alias_method :having, :has
 
   def is_the
+    callback = ->(args) do
+      @values[args.first.to_s] = args.last.to_s
+      self
+    end
+
     Spy.new(
       calls_expected: 2,
-      callback: ->(args) { @values[args.first.to_s] = args.last.to_s }
+      callback: callback
     )
+  end
+
+  alias_method :being_the, :is_the
+  alias_method :and_the, :is_the
+
+  def can
+    self
+  end
+
+  def speak(key = nil, &block)
+    if block_given?
+      @speak = block
+      if key
+        @key = key
+        self.class.send(:attr_reader, key)
+        instance_variable_set(:"@#{key}", [])
+      end
+    else
+      output = instance_exec(key, &@speak)
+      if @key
+        var = :"@#{@key}"
+        log = instance_variable_get(var)
+        log << output
+        instance_variable_set(var, log)
+      end
+      output
+    end
   end
 
   def method_missing(name, *args)
