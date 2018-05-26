@@ -1,6 +1,9 @@
+require "active_support/core_ext/string"
+
 class Thing
   attr_reader :name, :context, :parent
-  def initialize(name, context = nil, parent = nil)
+
+  def initialize(name = nil, context: nil, parent: nil)
      @name = name
      @context = context
      @parent = parent
@@ -10,31 +13,40 @@ class Thing
   def method_missing(name, *args)
     case name
     when :is_a
-      create_new_thing_with_value(true)
+      Thing.new(context: true, parent: self)
     when :is_not_a
-      create_new_thing_with_value(false)
+      Thing.new(context: false, parent: self)
+    when :has
+      things = args[0].times.map { Thing.new() }
+      Thing.new(context: things, parent: self)
     else
       if name.to_s.end_with?('?')
-        read_value(name.to_s.delete('?'))
+        get_value(name)
       else
-        send_value_to_parent(parent, name.to_s, context)
+        if parent
+          if context.is_a?(Array)
+            context.each { |t| t.name = name }
+          end
+          parent.set_value(name, context)
+        else
+          get_value(name)
+        end
       end
     end
   end
 
-  def create_new_thing_with_value(context)
-    Thing.new(name, context, self)
-  end
-
-  def send_value_to_parent(parent, name, context)
-    parent.set_value(name, context)
+  def name=(new_name)
+    @name = new_name.to_s.singularize
+    self.class.send(:define_method, "#{name}?") { true }
   end
 
   def set_value(name, context)
-    @values[name] = context
+    key = name.to_s
+    @values[key] = context
   end
 
-  def read_value(name)
-    @values[name]
+  def get_value(name)
+    key = name.to_s.delete('?')
+    @values[key]
   end
 end
