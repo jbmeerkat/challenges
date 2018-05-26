@@ -2,6 +2,16 @@
 
 require_relative 'thing'
 
+RSpec.describe Spy do
+  subject do
+    described_class.new(calls_expected: 2, callback: ->(array) { array })
+  end
+
+  it do
+    expect(subject.foo.bar).to contain_exactly(:foo, :bar)
+  end
+end
+
 RSpec.describe Thing do
   subject(:jane) { Thing.new('Jane') }
 
