@@ -2,13 +2,37 @@
 
 require_relative 'thing'
 
+RSpec.describe ArrayOfThings do
+  subject(:upcase) do
+    ArrayOfThings.new([+'foo', +'bar']).each { upcase! }
+  end
+
+  it "evaluated block passed to `each` in element's context" do
+    expect(upcase).to contain_exactly('FOO', 'BAR')
+  end
+end
+
 RSpec.describe Spy do
   subject do
     described_class.new(calls_expected: 2, callback: ->(array) { array })
   end
 
-  it do
+  it 'returns array of called methods after the specified number of calls' do
     expect(subject.foo.bar).to contain_exactly(:foo, :bar)
+  end
+end
+
+RSpec.describe InterceptCall do
+  subject do
+    described_class.new(&block)
+  end
+
+  let(:block) do
+    ->(name) { { called: name } }
+  end
+
+  it 'calls block with proper arguments' do
+    expect(subject.foo).to eq(called: :foo)
   end
 end
 
